@@ -36,6 +36,10 @@ export function useBankSyncAccountSettings(accountId: string) {
     `sync-update-dates-${accountId}`,
   );
 
+  const [savedHistoryDays = '90', setSavedHistoryDays] = useSyncedPref(
+    `sync-history-days-${accountId}`,
+  );
+
   const [transactionDirection, setTransactionDirection] =
     useState<TransactionDirection>('payment');
   const [importPending, setImportPending] = useState(
@@ -56,6 +60,8 @@ export function useBankSyncAccountSettings(accountId: string) {
   const [updateDates, setUpdateDates] = useState(
     String(savedUpdateDates) === 'true',
   );
+
+  const [historyDays, setHistoryDays] = useState(String(savedHistoryDays));
 
   const transactionQuery = q('transactions')
     .filter({
@@ -92,6 +98,7 @@ export function useBankSyncAccountSettings(accountId: string) {
     setSavedReimportDeleted(String(reimportDeleted));
     setSavedImportTransactions(String(importTransactions));
     setSavedUpdateDates(String(updateDates));
+    setSavedHistoryDays(historyDays);
   };
 
   const setMapping = (field: string, value: string) => {
@@ -120,6 +127,8 @@ export function useBankSyncAccountSettings(accountId: string) {
     setImportTransactions,
     updateDates,
     setUpdateDates,
+    historyDays,
+    setHistoryDays,
     mappings,
     setMapping,
     exampleTransaction,

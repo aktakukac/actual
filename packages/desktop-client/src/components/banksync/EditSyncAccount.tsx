@@ -14,6 +14,7 @@ import { pushModal } from '#modals/modalsSlice';
 import { useDispatch } from '#redux';
 
 import { BankSyncCheckboxOptions } from './BankSyncCheckboxOptions';
+import { BankSyncHistoryDays } from './BankSyncHistoryDays';
 import { FieldMapping } from './FieldMapping';
 import { useBankSyncAccountSettings } from './useBankSyncAccountSettings';
 
@@ -160,6 +161,8 @@ export function EditSyncAccount({ account }: EditSyncAccountProps) {
     setImportTransactions,
     updateDates,
     setUpdateDates,
+    historyDays,
+    setHistoryDays,
     mappings,
     setMapping,
     fields,
@@ -243,6 +246,13 @@ export function EditSyncAccount({ account }: EditSyncAccountProps) {
             setUpdateDates={setUpdateDates}
             helpMode="desktop"
           />
+
+          {account.account_sync_source === 'enableBanking' && (
+            <BankSyncHistoryDays
+              historyDays={historyDays}
+              onChange={setHistoryDays}
+            />
+          )}
 
           <View
             style={{

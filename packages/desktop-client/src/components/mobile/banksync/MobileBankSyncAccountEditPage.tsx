@@ -10,6 +10,7 @@ import { View } from '@actual-app/components/view';
 
 import { useUnlinkAccountMutation } from '#accounts';
 import { BankSyncCheckboxOptions } from '#components/banksync/BankSyncCheckboxOptions';
+import { BankSyncHistoryDays } from '#components/banksync/BankSyncHistoryDays';
 import { FieldMapping } from '#components/banksync/FieldMapping';
 import { useBankSyncAccountSettings } from '#components/banksync/useBankSyncAccountSettings';
 import { MobileBackButton } from '#components/mobile/MobileBackButton';
@@ -43,6 +44,8 @@ export function MobileBankSyncAccountEditPage() {
     setMapping,
     fields,
     saveSettings,
+    historyDays,
+    setHistoryDays,
   } = useBankSyncAccountSettings(accountId!);
 
   const handleCancel = () => {
@@ -157,6 +160,13 @@ export function MobileBankSyncAccountEditPage() {
               setUpdateDates={setUpdateDates}
               helpMode="mobile"
             />
+
+            {account.account_sync_source === 'enableBanking' && (
+              <BankSyncHistoryDays
+                historyDays={historyDays}
+                onChange={setHistoryDays}
+              />
+            )}
           </View>
         </View>
 

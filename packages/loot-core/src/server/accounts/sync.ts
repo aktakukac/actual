@@ -14,6 +14,7 @@ import { getServer } from '#server/server-config';
 import { batchMessages } from '#server/sync';
 import { batchUpdateTransactions } from '#server/transactions';
 import { runRules } from '#server/transactions/transaction-rules';
+import { limitBankSyncStartDate } from '#server/util/bank-sync-history';
 import {
   defaultMappings,
   mappingsFromString,
@@ -1007,7 +1008,9 @@ export async function addTransactions(
   const { normalized, payeesToCreate } = await normalizeTransactions(
     transactions,
     acctId,
-    { payeeNameNormalization: 'original' },
+    {
+      payeeNameNormalization: 'original',
+    },
   );
 
   const accounts: db.DbAccount[] = await db.getAccounts();
@@ -1238,7 +1241,22 @@ export async function syncAccount(
       newAccount,
     );
   } else if (acctRow.account_sync_source === 'enableBanking') {
-    download = await downloadEnableBankingTransactions(acctId, syncStartDate);
+    const historyDays = await aqlQuery(
+      q('preferences')
+        .filter({ id: `sync-history-days-${id}` })
+        .select('value'),
+    ).then(result => String(result?.data?.[0]?.value ?? '90'));
+
+    const limitedStartDate = limitBankSyncStartDate(
+      syncStartDate,
+      historyDays,
+      monthUtils.currentDay(),
+    );
+
+    download = await downloadEnableBankingTransactions(
+      acctId,
+      limitedStartDate,
+    );
   } else {
     throw new Error(
       `Unrecognized bank-sync provider: ${acctRow.account_sync_source}`,
