@@ -1,3 +1,5 @@
+FROM restic/restic:0.19.1 AS backup-tools
+
 FROM node:24-bookworm AS deps
 
 # Install required packages
@@ -54,7 +56,12 @@ RUN cp -r ./packages/desktop-client/build ./node_modules/@actual-app/web/build
 FROM node:24-bookworm-slim AS prod
 
 # Minimal runtime dependencies
-RUN apt-get update && apt-get install -y tini && apt-get clean -y && rm -rf /var/lib/apt/lists/*
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends tini ca-certificates \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=backup-tools /usr/bin/restic /usr/local/bin/restic
 
 # Create a non-root user
 ARG USERNAME=actual
@@ -72,6 +79,8 @@ COPY --from=builder /app/node_modules /app/node_modules
 COPY --from=builder /app/packages/sync-server/package.json ./
 COPY --from=builder /app/packages/sync-server/build ./build
 
-ENTRYPOINT ["/usr/bin/tini", "-g", "--"]
+COPY backup-supervisor.cjs backup-capture.cjs backup-upload.cjs backup-trigger.cjs /app/
+
+ENTRYPOINT ["/usr/bin/tini", "--", "node", "/app/backup-supervisor.cjs"]
 EXPOSE 5006
 CMD ["node", "build/app.js"]
