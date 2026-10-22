@@ -31,12 +31,12 @@ backup. Manual workflow dispatch also invokes that process.
 
 ### Credentials and their locations
 
-| Credential                                     | Required use                                                                     | Storage                                                                                |
-| ---------------------------------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| App-scoped Fly SSH token                       | Lets GitHub Actions connect to the Fly app and invoke the backup trigger         | GitHub Actions repository secret `FLY_API_TOKEN`                                       |
+| Credential                                     | Required use                                                                     | Storage                                                                                                                          |
+| ---------------------------------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| App-scoped Fly SSH token                       | Lets GitHub Actions connect to the Fly app and invoke the backup trigger         | GitHub Actions repository secret `FLY_API_TOKEN`                                                                                 |
 | Restic repository credentials                  | Lets the deployed backup process access the existing encrypted backup repository | Fly app secrets `RESTIC_REPOSITORY`, `RESTIC_PASSWORD`, `AWS_ACCESS_KEY_ID`, and `AWS_SECRET_ACCESS_KEY`; values are not tracked |
-| Actual account and budget encryption passwords | Needed for normal app access and, if enabled, decrypting encrypted budgets       | Password manager or other approved private credential store                            |
-| Bank connection credentials                    | Used by the live budget for bank connections                                     | Stored in the budget data; restored copies must be treated as sensitive                |
+| Actual account and budget encryption passwords | Needed for normal app access and, if enabled, decrypting encrypted budgets       | Password manager or other approved private credential store                                                                      |
+| Bank connection credentials                    | Used by the live budget for bank connections                                     | Stored in the budget data; restored copies must be treated as sensitive                                                          |
 
 Use the complete Fly token value, including any `FlyV1 ` prefix and following
 space, when setting `FLY_API_TOKEN`. Never add quotes or put the token in a

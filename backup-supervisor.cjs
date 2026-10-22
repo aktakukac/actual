@@ -28,18 +28,28 @@ function launch(executable, args) {
     detached: true,
   });
 
-  const record = { child, error: null, done: null };
+  /** @type {Error | null} */
+  let processError = null;
 
   child.on('error', error => {
-    record.error = error;
+    processError = error;
     console.error('Supervisor: process error', error);
   });
 
-  record.done = new Promise(resolve => {
+  /** @type {Promise<{ code: number | null; signal: NodeJS.Signals | null; error: Error | null }>} */
+  const done = new Promise(resolve => {
     child.once('close', (code, signal) => {
-      resolve({ code, signal, error: record.error });
+      resolve({ code, signal, error: processError });
     });
   });
+
+  const record = {
+    child,
+    get error() {
+      return processError;
+    },
+    done,
+  };
 
   return record;
 }
@@ -98,7 +108,7 @@ function startServer() {
   const current = launch(command[0], command.slice(1));
   server = current;
 
-  current.done.then(result => {
+  void current.done.then(result => {
     if (server === current) {
       server = undefined;
     }
@@ -225,7 +235,10 @@ async function runMaintenance() {
         message: 'Backup did not complete; inspect supervisor logs',
       });
     } catch (statusError) {
-      console.error('Supervisor: failed to write backup failure status', statusError);
+      console.error(
+        'Supervisor: failed to write backup failure status',
+        statusError,
+      );
     }
 
     throw error;

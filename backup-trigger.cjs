@@ -110,13 +110,17 @@ async function trigger() {
     }
 
     if (!runId && Date.now() - started > 30000) {
-      throw new Error('Supervisor did not acknowledge the backup within 30 seconds');
+      throw new Error(
+        'Supervisor did not acknowledge the backup within 30 seconds',
+      );
     }
 
     await new Promise(resolve => setTimeout(resolve, 2000));
   }
 
-  throw new Error('Timed out waiting for backup completion; inspect status before retrying');
+  throw new Error(
+    'Timed out waiting for backup completion; inspect status before retrying',
+  );
 }
 
 trigger().catch(error => {
