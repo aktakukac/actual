@@ -13,9 +13,10 @@ deployment configuration only in their intended secret stores.
 - GitHub repository: [`aktakukac/actual`](https://github.com/aktakukac/actual)
 - Backup workflow: [Production Backup](.github/workflows/backup.yml)
 - Missed-backup monitor: [Production Backup Watchdog](.github/workflows/backup-watchdog.yml)
-- The production Fly configuration and backup scripts are not present in this
-  repository. Do not infer deployment settings or recreate the Restic
-  repository from this runbook.
+- The Fly configuration, backup-enabled image definition, and container
+  backup scripts are tracked in this repository. Verify them against the live
+  Fly app before using them to deploy; this runbook is not a substitute for
+  that check.
 
 Production budget data includes bank connection credentials. Treat snapshots,
 restores, logs, and temporary copies as sensitive financial data. Never paste
@@ -30,12 +31,12 @@ backup. Manual workflow dispatch also invokes that process.
 
 ### Credentials and their locations
 
-| Credential                                     | Required use                                                                     | Storage                                                                                |
-| ---------------------------------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| App-scoped Fly SSH token                       | Lets GitHub Actions connect to the Fly app and invoke the backup trigger         | GitHub Actions repository secret `FLY_API_TOKEN`                                       |
-| Restic repository credentials                  | Lets the deployed backup process access the existing encrypted backup repository | Existing Fly app secret/configuration; exact names are intentionally not recorded here |
-| Actual account and budget encryption passwords | Needed for normal app access and, if enabled, decrypting encrypted budgets       | Password manager or other approved private credential store                            |
-| Bank connection credentials                    | Used by the live budget for bank connections                                     | Stored in the budget data; restored copies must be treated as sensitive                |
+| Credential                                     | Required use                                                                     | Storage                                                                                                                          |
+| ---------------------------------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| App-scoped Fly SSH token                       | Lets GitHub Actions connect to the Fly app and invoke the backup trigger         | GitHub Actions repository secret `FLY_API_TOKEN`                                                                                 |
+| Restic repository credentials                  | Lets the deployed backup process access the existing encrypted backup repository | Fly app secrets `RESTIC_REPOSITORY`, `RESTIC_PASSWORD`, `AWS_ACCESS_KEY_ID`, and `AWS_SECRET_ACCESS_KEY`; values are not tracked |
+| Actual account and budget encryption passwords | Needed for normal app access and, if enabled, decrypting encrypted budgets       | Password manager or other approved private credential store                                                                      |
+| Bank connection credentials                    | Used by the live budget for bank connections                                     | Stored in the budget data; restored copies must be treated as sensitive                                                          |
 
 Use the complete Fly token value, including any `FlyV1 ` prefix and following
 space, when setting `FLY_API_TOKEN`. Never add quotes or put the token in a
@@ -47,10 +48,11 @@ authenticated Fly CLI, then replace the GitHub secret through the repository
 settings page. Do not revoke the previous token until a workflow run using the
 replacement has successfully completed.
 
-The production deployment configuration and the exact Fly secret names for
-Restic are not tracked in this repository. Obtain those from the authorized
-Fly account and its private deployment records; do not create replacement
-secrets or initialize a repository as part of recovery.
+The Fly configuration and image build are tracked in this repository, but
+secret values remain only in their approved secret stores. Before deployment,
+verify the existing Fly secrets and app configuration against the live service.
+Do not create replacement secrets or initialize a repository as part of
+recovery.
 
 ### Backup schedule and alerts
 
@@ -223,12 +225,12 @@ Use an authorized operator and do not improvise these steps during an outage.
    volume and previous known-good deployment intact until the recovered
    service is verified and rollback is no longer needed.
 
-This repository does not contain the production Fly configuration, image
-build/release definition for the custom backup-enabled image, or the
-container-side Restic/backup scripts. Consequently, it does not yet document a
-reproducible production redeploy or a safe volume cutover command. Do not use
+This repository contains the Fly configuration, custom image build definition,
+and container-side Restic/backup scripts. They have not yet been revalidated
+against the live app as part of an automated deployment. A controlled release
+workflow and a safe volume cutover procedure are still outstanding. Do not use
 the generic Actual Fly.io installation instructions as a substitute for this
-service's private configuration.
+service's configuration.
 
 ## Planned deployment and upstream maintenance
 
