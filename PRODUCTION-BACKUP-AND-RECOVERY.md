@@ -30,12 +30,12 @@ backup. Manual workflow dispatch also invokes that process.
 
 ### Credentials and their locations
 
-| Credential | Required use | Storage |
-| --- | --- | --- |
-| App-scoped Fly SSH token | Lets GitHub Actions connect to the Fly app and invoke the backup trigger | GitHub Actions repository secret `FLY_API_TOKEN` |
-| Restic repository credentials | Lets the deployed backup process access the existing encrypted backup repository | Existing Fly app secret/configuration; exact names are intentionally not recorded here |
-| Actual account and budget encryption passwords | Needed for normal app access and, if enabled, decrypting encrypted budgets | Password manager or other approved private credential store |
-| Bank connection credentials | Used by the live budget for bank connections | Stored in the budget data; restored copies must be treated as sensitive |
+| Credential                                     | Required use                                                                     | Storage                                                                                |
+| ---------------------------------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| App-scoped Fly SSH token                       | Lets GitHub Actions connect to the Fly app and invoke the backup trigger         | GitHub Actions repository secret `FLY_API_TOKEN`                                       |
+| Restic repository credentials                  | Lets the deployed backup process access the existing encrypted backup repository | Existing Fly app secret/configuration; exact names are intentionally not recorded here |
+| Actual account and budget encryption passwords | Needed for normal app access and, if enabled, decrypting encrypted budgets       | Password manager or other approved private credential store                            |
+| Bank connection credentials                    | Used by the live budget for bank connections                                     | Stored in the budget data; restored copies must be treated as sensitive                |
 
 Use the complete Fly token value, including any `FlyV1 ` prefix and following
 space, when setting `FLY_API_TOKEN`. Never add quotes or put the token in a
@@ -191,6 +191,7 @@ users can decrypt every budget.
    An HTTP 200 health response and page response confirm the server starts and
    serves the app. They do not confirm successful browser login, correct
    budget contents, or successful decryption.
+
 6. If visual inspection is required, decide on a secure local-only access
    method first. Do not weaken network isolation just to make a port
    reachable. A restored budget may contain working bank credentials; do not
