@@ -13,6 +13,7 @@ deployment configuration only in their intended secret stores.
 - GitHub repository: [`aktakukac/actual`](https://github.com/aktakukac/actual)
 - Backup workflow: [Production Backup](.github/workflows/backup.yml)
 - Missed-backup monitor: [Production Backup Watchdog](.github/workflows/backup-watchdog.yml)
+- Upstream release deployment: [Deploy upstream Actual release](.github/workflows/upstream-release-deploy.yml)
 - The Fly configuration, backup-enabled image definition, and container
   backup scripts are tracked in this repository. Verify them against the live
   Fly app before using them to deploy; this runbook is not a substitute for
@@ -34,6 +35,7 @@ backup. Manual workflow dispatch also invokes that process.
 | Credential                                     | Required use                                                                     | Storage                                                                                                                          |
 | ---------------------------------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
 | App-scoped Fly SSH token                       | Lets GitHub Actions connect to the Fly app and invoke the backup trigger         | GitHub Actions repository secret `FLY_API_TOKEN`                                                                                 |
+| App-scoped Fly deploy token                    | Lets the approved release workflow push and deploy a candidate image             | GitHub Actions `production` environment secret `FLY_DEPLOY_API_TOKEN`; not configured yet                                        |
 | Restic repository credentials                  | Lets the deployed backup process access the existing encrypted backup repository | Fly app secrets `RESTIC_REPOSITORY`, `RESTIC_PASSWORD`, `AWS_ACCESS_KEY_ID`, and `AWS_SECRET_ACCESS_KEY`; values are not tracked |
 | Actual account and budget encryption passwords | Needed for normal app access and, if enabled, decrypting encrypted budgets       | Password manager or other approved private credential store                                                                      |
 | Bank connection credentials                    | Used by the live budget for bank connections                                     | Stored in the budget data; restored copies must be treated as sensitive                                                          |
@@ -53,6 +55,12 @@ secret values remain only in their approved secret stores. Before deployment,
 verify the existing Fly secrets and app configuration against the live service.
 Do not create replacement secrets or initialize a repository as part of
 recovery.
+
+The release workflow uses the separate `FLY_DEPLOY_API_TOKEN` environment
+secret. Do not reuse or replace the backup workflow's `FLY_API_TOKEN`. Configure
+the GitHub `production` environment with required reviewers and restrict it to
+the `master` branch before adding the deploy token. The workflow fails before
+contacting Fly if this secret is missing.
 
 ### Backup schedule and alerts
 
@@ -227,25 +235,50 @@ Use an authorized operator and do not improvise these steps during an outage.
 
 This repository contains the Fly configuration, custom image build definition,
 and container-side Restic/backup scripts. They have not yet been revalidated
-against the live app as part of an automated deployment. A controlled release
-workflow and a safe volume cutover procedure are still outstanding. Do not use
-the generic Actual Fly.io installation instructions as a substitute for this
-service's configuration.
+against the live app. The release workflow is implemented but is not enabled
+until its environment and deploy-token prerequisites are verified. It does not
+perform a volume cutover; do not use the generic Actual Fly.io installation
+instructions as a substitute for this service's configuration.
 
-## Planned deployment and upstream maintenance
+## Controlled upstream release deployment
 
-There is no verified deployment or monthly upstream-update workflow for this
-service in this repository. Until one is established and tested:
+The `Deploy upstream Actual release` workflow checks the latest stable release
+from `actualbudget/actual` daily and can also be started manually. It:
 
-- Do not automatically deploy upstream `latest` or a newly built image to
-  production.
-- Review upstream changes and release notes, test a pinned candidate against
-  a separate copy, and verify a current backup before any approved update.
-- Record the exact image digest, configuration change, validation result, and
-  rollback procedure in the authorized deployment record.
-- Do not commit Fly tokens, Restic credentials, bank credentials, or private
-  deployment configuration to implement this process.
+- pins the candidate to the upstream release tag, then overlays this
+  repository's Fly configuration and backup scripts;
+- builds the image and checks its `/health` endpoint in a Docker container
+  with network access disabled and no production data or credentials;
+- waits for approval through the protected GitHub `production` environment,
+  then pushes and deploys the exact image that passed the isolated check;
+- checks the production `/health` endpoint and redeploys the previously running
+  image if deployment or the post-deploy health check fails; and
+- records a Git tag after success so the same upstream release is not deployed
+  again automatically. Failed releases are recorded and require a manual
+  dispatch with `retry_failed` enabled before another attempt.
 
-The monthly upstream update and controlled deployment procedure remains an
-open operational task; this runbook deliberately does not claim it is
+Before enabling production deployment:
+
+1. Verify `fly.toml`, the live app configuration, attached volume, existing
+   secrets, and the current backup against the production service.
+2. Inspect a successful backup and complete an isolated restore of the real
+   budget with bank network access blocked. Validate the restored budget before
+   approving a production deployment.
+3. Configure the GitHub `production` environment with required reviewers and
+   limit deployments to `master`.
+4. Create a separate, app-scoped Fly deploy token and store it only as the
+   environment secret `FLY_DEPLOY_API_TOKEN`. Do not use the backup SSH token.
+5. Dispatch the workflow once, inspect the pinned release and isolated test,
+   then approve only after reviewing the release notes and confirming a
+   current backup.
+
+The workflow does not initialize or modify Restic, access bank endpoints during
+candidate testing, change Fly secrets, or cut over a restored volume. Do not
+add the deploy token until the live configuration and environment protection
+have been verified. The monthly review of upstream release notes and production
+backup status remains an operational check even though release detection is
 automated.
+
+The workflow does not merge upstream code into this repository's `master`
+branch. Monthly review of upstream changes and a separate safe volume cutover
+procedure remain operational tasks.
